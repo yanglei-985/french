@@ -1,0 +1,1753 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>反向翻译器 - 语言表达优化工具</title>
+    <style>
+        :root {
+            --primary-color: #91AD70;
+            --secondary-color: #6b8cae;
+            --accent-color: #ff7e5f;
+            --light-bg: #f5f7fa;
+            --dark-bg: #2c3e50;
+            --text-color: #336774;
+            --light-text: #f5f7fa;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--light-bg);
+            padding: 0;
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .logo-icon {
+            font-size: 1.8rem;
+        }
+        
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 1.5rem;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem;
+            border-radius: var(--border-radius);
+            transition: background-color 0.3s;
+        }
+        
+        nav a:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+        }
+        
+        .translator-header {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .translator-settings {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .select-wrapper {
+            position: relative;
+            min-width: 150px;
+        }
+        
+        select {
+            width: 100%;
+            padding: 0.5rem 2rem 0.5rem 0.5rem;
+            border-radius: var(--border-radius);
+            border: 1px solid #ddd;
+            appearance: none;
+            background-color: white;
+            cursor: pointer;
+        }
+        
+        .select-wrapper::after {
+            content: '▼';
+            font-size: 0.7rem;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+        
+        .translator-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            padding: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .translator-body {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .translator-column {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .text-area-container {
+            position: relative;
+            flex-grow: 1;
+        }
+        
+        .text-area-label {
+            position: absolute;
+            top: -10px;
+            left: 10px;
+            background-color: white;
+            padding: 0 0.5rem;
+            font-size: 0.8rem;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 200px;
+            border-radius: var(--border-radius);
+            border: 1px solid #ddd;
+            padding: 1rem;
+            resize: vertical;
+            font-family: inherit;
+            line-height: 1.6;
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        button.secondary {
+            background-color: #6c757d;
+        }
+        
+        button.secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        .button-row {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 1rem;
+        }
+        
+        .large-button {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            text-align: center;
+            margin: 1rem 0;
+            font-size: 1.1rem;
+        }
+        
+        .translation-flow {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background-color: var(--light-bg);
+            margin: 1rem 0;
+            border-radius: var(--border-radius);
+        }
+        
+        .flow-item {
+            text-align: center;
+        }
+        
+        .flow-arrow {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+        
+        .analysis-section {
+            margin-top: 2rem;
+        }
+        
+        .section-title {
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+        
+        .similarity-score {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .score-bar {
+            flex-grow: 1;
+            height: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .score-fill {
+            height: 100%;
+            background-color: var(--accent-color);
+            width: 75%; /* This will be set dynamically by JavaScript */
+        }
+        
+        .score-value {
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+        
+        .diff-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        
+        .diff-table th, .diff-table td {
+            padding: 0.75rem;
+            border: 1px solid #dee2e6;
+        }
+        
+        .diff-table th {
+            background-color: var(--light-bg);
+        }
+        
+        .diff-highlight {
+            background-color: #fff3cd;
+        }
+        
+        .optimization-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .opt-card {
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .opt-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--box-shadow);
+        }
+        
+        .opt-card-header {
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .opt-select-btn {
+            background-color: transparent;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            padding: 0.2rem 0.5rem;
+            font-size: 0.8rem;
+        }
+        
+        .opt-select-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .history-section {
+            margin-top: 2rem;
+        }
+        
+        .round-pills {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+        
+        .round-pill {
+            padding: 0.4rem 1rem;
+            background-color: #e9ecef;
+            border-radius: 20px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        
+        .round-pill.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .feedback-form {
+            background-color: white;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-top: 2rem;
+        }
+        
+        footer {
+            background-color: var(--dark-bg);
+            color: var(--light-text);
+            text-align: center;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin: 1rem 0;
+        }
+        
+        .footer-links a {
+            color: var(--light-text);
+            text-decoration: none;
+        }
+        
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        
+        .loading {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        .loading-spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .synonym-results {
+            margin: 2rem auto;
+            max-width: 900px;
+            padding: 2rem;
+            background: linear-gradient(145deg, #ffffff, #f8f9fa);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+        
+        .synonym-comparison, .multi-word-comparison {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+        
+        .synonym-comparison h4, .multi-word-comparison h4 {
+            color: var(--primary-color);
+            font-size: 1.6rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--primary-color);
+            position: relative;
+        }
+        
+        .word-pair, .words-list {
+            background: var(--light-bg);
+            padding: 1.2rem 1.5rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            border-left: 4px solid var(--primary-color);
+            transition: transform 0.3s ease;
+        }
+        
+        .word-pair:hover, .words-list:hover {
+            transform: translateX(10px);
+        }
+        
+        .comparison-details {
+            background: #f8f9fa;
+            padding: 1.8rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            line-height: 1.8;
+        }
+        
+        .comparison-details pre {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            white-space: pre-wrap;
+            color: var(--text-color);
+            font-size: 1.1rem;
+        }
+        
+        .comparison-details h1, 
+        .comparison-details h2, 
+        .comparison-details h3 {
+            color: var(--primary-color);
+            margin: 1.2em 0 0.8em;
+            font-weight: 600;
+        }
+        
+        .comparison-details ul, 
+        .comparison-details ol {
+            padding-left: 1.5em;
+            margin: 1em 0;
+        }
+        
+        .comparison-details li {
+            margin: 0.5em 0;
+            line-height: 1.6;
+        }
+        
+        .comparison-details blockquote {
+            border-left: 4px solid var(--primary-color);
+            padding: 1em;
+            margin: 1em 0;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .analysis-time {
+            text-align: right;
+            color: #666;
+            font-style: italic;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px dashed #eee;
+        }
+        
+        .word-pair strong, 
+        .words-list strong {
+            color: var(--primary-color);
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .synonym-comparison, 
+        .multi-word-comparison {
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @media (max-width: 768px) {
+            .synonym-results {
+                padding: 1rem;
+                margin: 1rem;
+            }
+            
+            .synonym-comparison, 
+            .multi-word-comparison {
+                padding: 1.5rem;
+            }
+            
+            .comparison-details {
+                padding: 1.2rem;
+            }
+            
+            .comparison-details pre {
+                font-size: 1rem;
+            }
+        }
+        
+        .highlight {
+            background: rgba(255, 126, 95, 0.1);
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            color: var(--accent-color);
+        }
+        
+        .tag {
+            display: inline-block;
+            padding: 0.3em 0.8em;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin: 0.2em;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <span class="logo-icon">🧠 </span>
+            <span>反向翻译器Normande</span>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="#">首页</a></li>
+                <li><a href="https://www.youtube.com/watch?v=QcuV3sclHMw" target="_blank">使用指南</a></li>
+                <li><a href="#">关于</a></li>
+                <li><a href="#">反馈</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main>
+        <div class="container">
+            <div class="translator-header">
+                <h2>表达优化器</h2>
+                <div class="translator-settings">
+                    <div class="select-wrapper">
+                        <select id="source-lang">
+                            <option value="zh" selected>中文</option>
+                            <option value="en">英文</option>
+                            <option value="ja">日语</option>
+                            <option value="ko">韩语</option>
+                            <option value="fr">法语</option>
+                            <option value="de">德语</option>
+                            <option value="es">西班牙语</option>
+                            <option value="ar">阿拉伯语</option>
+                        </select>
+                    </div>
+                    <div class="select-wrapper">
+                        <select id="target-lang">
+                            <option value="en" selected>英文</option>
+                            <option value="zh">中文</option>
+                            <option value="ja">日语</option>
+                            <option value="ko">韩语</option>
+                            <option value="fr">法语</option>
+                            <option value="de">德语</option>
+                            <option value="es">西班牙语</option>
+                            <option value="ar">阿拉伯语</option>
+                        </select>
+                    </div>
+                    <div class="select-wrapper">
+                        <select id="mode">
+                            <option value="precise" selected>精准模式</option>
+                            <option value="elegant">优雅模式</option>
+                            <option value="concise">简练模式</option>
+                        </select>
+                    </div>
+                    <div class="select-wrapper">
+                        <select id="context">
+                            <option value="general" selected>通用</option>
+                            <option value="academic">学术</option>
+                            <option value="business">商务</option>
+                            <option value="casual">日常</option>
+                            <option value="technical">技术</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="translator-body">
+                <div class="translator-column">
+                    <div class="text-area-container">
+                        <span class="text-area-label">输入原文</span>
+                        <textarea id="input-text" placeholder="请在此输入您想要优化的文本..."></textarea>
+                        <div class="button-row">
+                            <button class="synonym-compare-btn secondary" onclick="window.ui.handleSynonymComparison(document.getElementById('input-text').value)">近义词对比</button>
+                            <button class="multi-word-compare-btn secondary" onclick="window.ui.handleMultiWordComparison(document.getElementById('input-text').value)">多词对比</button>
+                        </div>
+                    </div>
+                    <button id="translate-btn" class="large-button">开始翻译优化</button>
+                </div>
+                <div class="translator-column">
+                    <div class="text-area-container">
+                        <span class="text-area-label">优化结果</span>
+                        <textarea id="output-text" placeholder="优化后的文本将显示在这里..." readonly></textarea>
+                        <div class="button-row">
+                            <button id="copy-btn" class="secondary">复制结果</button>
+                            <button id="multi-round-btn">多轮优化</button>
+                            <button class="synonym-compare-btn secondary" onclick="window.ui.handleSynonymComparison(document.getElementById('output-text').value)">近义词对比</button>
+                            <button class="multi-word-compare-btn secondary" onclick="window.ui.handleMultiWordComparison(document.getElementById('output-text').value)">多词对比</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="translation-flow">
+                <div class="flow-item">原文</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-item">正向翻译</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-item">反向翻译</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-item">分析对比</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-item">优化建议</div>
+            </div>
+        </div>
+        
+        <div class="analysis-section container" style="display: none;" id="analysis-section">
+            <h3 class="section-title">翻译分析</h3>
+            
+            <div class="similarity-score">
+                <span>相似度得分:</span>
+                <div class="score-bar">
+                    <div class="score-fill" id="score-fill"></div>
+                </div>
+                <span class="score-value" id="score-value">75%</span>
+            </div>
+            
+            <h4>翻译过程</h4>
+            <div class="translation-steps">
+                <div class="text-area-container">
+                    <span class="text-area-label">正向翻译结果 (<span id="source-to-target-label">中 → 英</span>)</span>
+                    <div class="translation-text-container">
+                        <link rel="preconnect" href="https://fonts.googleapis.com">
+                        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                        <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+                        <textarea id="forward-translation" readonly style="font-size: larger; font-family: 'Roboto', 'The Bold Font', 'SimHei', '黑体', sans-serif;"></textarea>
+                        <div class="button-group">
+                            <button class="play-audio-btn" onclick="window.ui.playAudio(document.getElementById('forward-translation').value)">
+                                🔊 播放
+                            </button>
+                            <button class="multi-word-compare-btn" onclick="window.ui.handleMultiWordComparison(document.getElementById('forward-translation').value)">
+                                翻译结果多词对比
+                            </button>
+                            <button class="synonym-compare-btn" onclick="window.ui.handleSynonymComparison(document.getElementById('forward-translation').value)">
+                                近义词分析
+                            </button>
+                            <!-- 添加录音按钮 -->
+                            <button id="record-audio-btn" class="record-audio-btn" onclick="startRecording()">
+                                🎙️ 开始录音
+                            </button>
+                            <span id="recording-status" class="recording-status"></span>
+                        </div>
+                        <!-- 添加音频播放器容器 -->
+                        <div id="audio-player-container" class="audio-player-container" style="display: none; margin-top: 10px;">
+                            <audio id="recorded-audio-player" controls style="width: 100%;"></audio>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                <div class="text-area-container">
+                    <span class="text-area-label">反向翻译结果 (<span id="target-to-source-label">英 → 中</span>)</span>
+                    <div class="translation-text-container">
+                        <link rel="preconnect" href="https://fonts.googleapis.com">
+                        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                        <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+                        <textarea id="reverse-translation" readonly style="font-size: larger; font-family: 'Montserrat', 'Roboto', 'SimHei', '黑体', sans-serif;"></textarea>
+                        <button class="play-audio-btn" onclick="window.ui.playAudio(document.getElementById('reverse-translation').value)">
+                            🔊 播放
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <h4>差异对比</h4>
+            <table class="diff-table">
+                <thead>
+                    <tr>
+                        <th width="45%">原文表达</th>
+                        <th width="45%">反向翻译</th>
+                        <th width="10%">相似度</th>
+                    </tr>
+                </thead>
+                <tbody id="diff-table-body">
+                    <!-- 将由JavaScript动态填充 -->
+                </tbody>
+            </table>
+            
+            <h4>优化建议</h4>
+            <div class="optimization-cards">
+                <div class="opt-card">
+                    <div class="opt-card-header">
+                        <span>精准模式</span>
+                        <button class="opt-select-btn">应用</button>
+                    </div>
+                    <p id="precise-optimization">该工具能帮助用户优化表达，提高沟通能力。</p>
+                </div>
+                <div class="opt-card">
+                    <div class="opt-card-header">
+                        <span>优雅模式</span>
+                        <button class="opt-select-btn">应用</button>
+                    </div>
+                    <p id="elegant-optimization">此工具助用户精炼语言，使沟通更加流畅。</p>
+                </div>
+                <div class="opt-card">
+                    <div class="opt-card-header">
+                        <span>简练模式</span>
+                        <button class="opt-select-btn">应用</button>
+                    </div>
+                    <p id="concise-optimization">工具优化表达，提升沟通力。</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="history-section container" style="display: none;" id="history-section">
+            <h3 class="section-title">多轮优化历史</h3>
+            
+            <div class="round-pills" id="round-pills">
+                <!-- 将由JavaScript动态填充 -->
+            </div>
+            
+            <div class="text-area-container">
+                <textarea id="history-text" readonly></textarea>
+            </div>
+            
+            <div class="optimization-controls">
+                <div class="control-group">
+                    <label for="optimization-mode">优化模式:</label>
+                    <select id="optimization-mode">
+                        <option value="precise">精准模式</option>
+                        <option value="elegant">优雅模式</option>
+                        <option value="concise">简练模式</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="rounds">优化轮数:</label>
+                    <input type="number" id="rounds" min="1" max="5" value="3">
+                </div>
+                <button id="start-multi-round-btn" class="primary-button">开始多轮优化</button>
+            </div>
+            
+            <div id="multi-round-result" class="multi-round-result">
+                <!-- 多轮优化结果将在这里显示 -->
+            </div>
+            
+            <div id="error-message" class="error-message"></div>
+        </div>
+            
+            <div class="similarity-score">
+                <span>总体改进度:</span>
+                <div class="score-bar">
+                    <div class="score-fill" id="improvement-fill"></div>
+                </div>
+                <span class="score-value" id="improvement-value">85%</span>
+            </div>
+            
+            <div class="button-row">
+                <button id="export-btn" class="secondary">导出历史</button>
+                <button id="continue-optimize-btn">继续优化</button>
+            </div>
+        </div>
+        
+        <div class="feedback-form container">
+            <h3 class="section-title">反馈与建议</h3>
+            <p>您对反向翻译器有任何建议或发现任何问题，欢迎告诉我们！</p>
+            <div class="text-area-container">
+                <textarea id="feedback-text" placeholder="请输入您的反馈..."></textarea>
+            </div>
+            <button id="submit-feedback-btn" class="large-button">提交反馈</button>
+        </div>
+    </main>
+    
+    <footer>
+        <div class="footer-links">
+            <a href="#">使用条款</a>
+            <a href="#">隐私政策</a>
+            <a href="#">联系杨磊</a>
+        </div>
+        <p>&copy; 2025 反向翻译器 - Qui ne risque rien n'a rien.</p>
+    </footer>
+    
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- 添加marked.js库 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <script>
+        // 反向翻译器系统架构
+        class ReverseTranslator {
+            constructor(options = {}) {
+                this.sourceLang = options.sourceLang || 'zh';
+                this.targetLang = options.targetLang || 'en';
+                this.translationModel = options.translationModel || 'gpt-4';
+                this.optimizationMode = options.optimizationMode || 'precise';
+                this.contextAware = options.contextAware || true;
+                this.maxRounds = options.maxRounds || 3;
+                this.similarityThreshold = options.similarityThreshold || 0.85;
+                this.apiKey = 'sk-G8fwDqN0IaB0hayInoXa7I72vwSdd9V4C2K9c1wwmncvEHjH';
+                // 支持的语言列表
+                this.supportedLanguages = {
+                    'zh': '中文',
+                    'en': '英文',
+                    'ja': '日语',
+                    'ko': '韩语',
+                    'fr': '法语',
+                    'de': '德语',
+                    'es': '西班牙语',
+                    'ru': '俄语',
+                    'it': '意大利语',
+                    'pt': '葡萄牙语',
+                    'ar': '阿拉伯语',
+                    'hi': '印地语',
+                    'vi': '越南语',
+                    'th': '泰语'
+                };
+            }
+
+            async translate(text, context = {}) {
+                try {
+                    console.log('调用翻译 API，参数:', {
+                        sourceLang: this.sourceLang,
+                        targetLang: this.targetLang,
+                        text: text,
+                        context: context
+                    });
+
+                    // 正向翻译
+                    const forwardResponse = await fetch('https://api.aigc.bar/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${this.apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: 'gpt-4o-mini',
+                            messages: [
+                                {
+                                    role: 'system',
+                                    content: `你是一个专业的翻译专家。请将文本从${this.supportedLanguages[this.sourceLang]}翻译成${this.supportedLanguages[this.targetLang]}，保持原文的语气和风格。`
+                                },
+                                {
+                                    role: 'user',
+                                    content: text
+                                }
+                            ]
+                        })
+                    });
+
+                    if (!forwardResponse.ok) {
+                        throw new Error(`正向翻译请求失败: ${forwardResponse.status}`);
+                    }
+
+                    const forwardData = await forwardResponse.json();
+                    console.log('正向翻译响应:', forwardData);
+                    
+                    if (!forwardData.choices || !forwardData.choices[0] || !forwardData.choices[0].message) {
+                        throw new Error('正向翻译返回数据格式错误');
+                    }
+
+                    const translatedText = forwardData.choices[0].message.content.trim();
+                    console.log('正向翻译结果:', translatedText);
+
+                    // 反向翻译
+                    const reverseResponse = await fetch('https://api.aigc.bar/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${this.apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: 'gpt-4o-mini',
+                            messages: [
+                                {
+                                    role: 'system',
+                                    content: `你是一个专业的翻译专家。请将文本从${this.supportedLanguages[this.targetLang]}翻译成${this.supportedLanguages[this.sourceLang]}，保持原文的语气和风格。`
+                                },
+                                {
+                                    role: 'user',
+                                    content: translatedText
+                                }
+                            ]
+                        })
+                    });
+
+                    if (!reverseResponse.ok) {
+                        throw new Error(`反向翻译请求失败: ${reverseResponse.status}`);
+                    }
+
+                    const reverseData = await reverseResponse.json();
+                    console.log('反向翻译响应:', reverseData);
+                    
+                    if (!reverseData.choices || !reverseData.choices[0] || !reverseData.choices[0].message) {
+                        throw new Error('反向翻译返回数据格式错误');
+                    }
+
+                    const reverseTranslatedText = reverseData.choices[0].message.content.trim();
+                    console.log('反向翻译结果:', reverseTranslatedText);
+
+                    // 生成优化建议
+                    const optimizationResponse = await fetch('https://api.aigc.bar/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${this.apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: 'gpt-4o-mini',
+                            messages: [
+                                {
+                                    role: 'system',
+                                    content: '你是一个语言优化专家。请分析文本并提供优化建议。'
+                                },
+                                {
+                                    role: 'user',
+                                    content: `请分析以下原文和反向翻译结果，提供优化建议：
+原文：${text}
+反向翻译：${reverseTranslatedText}
+
+请提供三种优化建议：
+1. 精准模式：保持原意的同时使表达更准确
+2. 优雅模式：使表达更加优美流畅
+3. 简练模式：保持核心意思的同时使表达更简洁
+
+请用中文回复，每种模式一行。`
+                                }
+                            ]
+                        })
+                    });
+
+                    if (!optimizationResponse.ok) {
+                        throw new Error(`优化建议请求失败: ${optimizationResponse.status}`);
+                    }
+
+                    const optimizationData = await optimizationResponse.json();
+                    console.log('优化建议响应:', optimizationData);
+                    
+                    if (!optimizationData.choices || !optimizationData.choices[0] || !optimizationData.choices[0].message) {
+                        throw new Error('优化建议返回数据格式错误');
+                    }
+
+                    const suggestions = optimizationData.choices[0].message.content.trim().split('\n');
+
+                    // 计算相似度和差异
+                    const similarityScore = this.calculateSimilarity(text, reverseTranslatedText);
+                    const differences = this.findDifferences(text, reverseTranslatedText);
+
+                    return {
+                        originalText: text,
+                        forwardTranslation: translatedText,
+                        reverseTranslation: reverseTranslatedText,
+                        differences: differences,
+                        optimizedVersions: {
+                            precise: suggestions[0] || '',
+                            elegant: suggestions[1] || '',
+                            concise: suggestions[2] || ''
+                        },
+                        similarityScore: similarityScore
+                    };
+                } catch (error) {
+                    console.error('翻译过程出错:', error);
+                    throw new Error(`翻译失败: ${error.message}`);
+                }
+            }
+
+            async compareSynonyms(word) {
+                try {
+                    const prompt = `
+请分析词语"${word}"的近义词和用法差异。
+要求：
+1. 列出3-5个最常用的近义词，根据具体的语言给出具体的答案。并且给出这些单词的例句。
+2. 分析与主要近义词的用法差异
+3. 分析语体差异（正式度、书面/口语等）
+4. 给出使用场景建议
+`;
+
+                    const response = await fetch('https://api.aigc.bar/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${this.apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: 'gpt-4o-mini',
+                            messages: [
+                                {
+                                    role: 'system',
+                                    content: '你是一个专业的语言分析专家，知道学生对语言的要求，请用中文回答。'
+                                },
+                                { role: 'user', content: prompt }
+                            ]
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('API请求失败');
+                    }
+
+                    const data = await response.json();
+                    const analysis = data.choices[0].message.content;
+
+                    return {
+                        originalWord: word,
+                        analysis: analysis,
+                        timestamp: new Date().toLocaleString()
+                    };
+                } catch (error) {
+                    console.error('近义词分析失败:', error);
+                    throw new Error('近义词分析失败: ' + error.message);
+                }
+            }
+
+            async compareMultipleSynonyms(words) {
+                try {
+                    const prompt = `
+请对比分析以下词语之间的差异：${words.join('、')}
+要求：
+1. 分析词语之间的细微差别,注重介词的用法。
+2. 比较使用场景的不同
+3. 给出最适合的使用场合
+4. 提供实际应用示例
+5. 把意群整理在一个小块，然后解释其意思
+`;
+
+                    const response = await fetch('https://api.aigc.bar/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${this.apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: 'gpt-4o-mini',
+                            messages: [
+                                {
+                                    role: 'system',
+                                    content: '你是一个专业的语言分析专家，请用中文回答。'
+                                },
+                                { role: 'user', content: prompt }
+                            ]
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('API请求失败');
+                    }
+
+                    const data = await response.json();
+                    const analysis = data.choices[0].message.content;
+
+                    return {
+                        words: words,
+                        analysis: analysis,
+                        timestamp: new Date().toLocaleString()
+                    };
+                } catch (error) {
+                    console.error('多词对比分析失败:', error);
+                    throw new Error('多词对比分析失败: ' + error.message);
+                }
+            }
+
+            calculateSimilarity(text1, text2) {
+                if (!text1 || !text2) return 0;
+                
+                // 将文本分割成句子
+                const sentences1 = text1.split(/[。！？.!?]/).filter(s => s.trim());
+                const sentences2 = text2.split(/[。！？.!?]/).filter(s => s.trim());
+                
+                // 计算每个句子的相似度并取平均值
+                let totalSimilarity = 0;
+                let comparedPairs = 0;
+                
+                for (let i = 0; i < sentences1.length; i++) {
+                    const s1 = sentences1[i].trim();
+                    if (!s1) continue;
+                    
+                    // 找到最相似的句子
+                    let maxSimilarity = 0;
+                    for (let j = 0; j < sentences2.length; j++) {
+                        const s2 = sentences2[j].trim();
+                        if (!s2) continue;
+                        
+                        const similarity = this.calculateStringSimilarity(s1, s2);
+                        maxSimilarity = Math.max(maxSimilarity, similarity);
+                    }
+                    
+                    totalSimilarity += maxSimilarity;
+                    comparedPairs++;
+                }
+                
+                return comparedPairs > 0 ? totalSimilarity / comparedPairs : 0;
+            }
+
+            calculateStringSimilarity(str1, str2) {
+                const len1 = str1.length;
+                const len2 = str2.length;
+                
+                // 创建矩阵
+                const matrix = Array(len1 + 1).fill().map(() => Array(len2 + 1).fill(0));
+                
+                // 初始化第一行和第一列
+                for (let i = 0; i <= len1; i++) matrix[i][0] = i;
+                for (let j = 0; j <= len2; j++) matrix[0][j] = j;
+                
+                // 填充矩阵
+                for (let i = 1; i <= len1; i++) {
+                    for (let j = 1; j <= len2; j++) {
+                        if (str1[i - 1] === str2[j - 1]) {
+                            matrix[i][j] = matrix[i - 1][j - 1];
+                        } else {
+                            matrix[i][j] = Math.min(
+                                matrix[i - 1][j - 1] + 1, // 替换
+                                matrix[i][j - 1] + 1,     // 插入
+                                matrix[i - 1][j] + 1      // 删除
+                            );
+                        }
+                    }
+                }
+                
+                // 计算相似度
+                const maxLen = Math.max(len1, len2);
+                return maxLen > 0 ? 1 - matrix[len1][len2] / maxLen : 1;
+            }
+
+            findDifferences(originalText, translatedText) {
+                if (!originalText || !translatedText) return [];
+                
+                // 将文本分割成句子
+                const originalSentences = originalText.split(/[。！？.!?]/).filter(s => s.trim());
+                const translatedSentences = translatedText.split(/[。！？.!?]/).filter(s => s.trim());
+                
+                const differences = [];
+                
+                // 比较每个句子
+                for (let i = 0; i < originalSentences.length; i++) {
+                    const original = originalSentences[i].trim();
+                    if (!original) continue;
+                    
+                    // 找到最相似的翻译句子
+                    let bestMatch = {
+                        sentence: '',
+                        similarity: 0
+                    };
+                    
+                    for (let j = 0; j < translatedSentences.length; j++) {
+                        const translated = translatedSentences[j].trim();
+                        if (!translated) continue;
+                        
+                        const similarity = this.calculateStringSimilarity(original, translated);
+                        if (similarity > bestMatch.similarity) {
+                            bestMatch = {
+                                sentence: translated,
+                                similarity: similarity
+                            };
+                        }
+                    }
+                    
+                    // 如果相似度低于阈值，认为存在显著差异
+                    if (bestMatch.similarity < 0.8) {
+                        differences.push({
+                            original: original,
+                            reversed: bestMatch.sentence,
+                            similarity: bestMatch.similarity
+                        });
+                    }
+                }
+                
+                return differences;
+            }
+        }
+
+        // 修改UI控制器以支持近义词对比功能
+        class ReverseTranslatorUI {
+            constructor(translator) {
+                this.translator = translator;
+                this.inputText = document.getElementById('input-text');
+                this.outputText = document.getElementById('output-text');
+                this.translateBtn = document.getElementById('translate-btn');
+                this.copyBtn = document.getElementById('copy-btn');
+                this.multiRoundBtn = document.getElementById('multi-round-btn');
+                this.synonymCompareBtn = document.getElementById('synonym-compare-btn');
+                this.multiWordCompareBtn = document.getElementById('multi-word-compare-btn');
+                this.synonymResults = document.getElementById('synonym-results');
+                this.loading = document.getElementById('loading');
+                this.translationSteps = document.querySelector('.translation-steps');
+                this.scoreFill = document.getElementById('score-fill');
+                this.scoreValue = document.getElementById('score-value');
+                this.improvementFill = document.getElementById('improvement-fill');
+                this.improvementValue = document.getElementById('improvement-value');
+                this.diffTableBody = document.getElementById('diff-table-body');
+                this.roundPills = document.getElementById('round-pills');
+                this.historyText = document.getElementById('history-text');
+                this.optimizationMode = document.getElementById('optimization-mode');
+                this.rounds = document.getElementById('rounds');
+                this.startMultiRoundBtn = document.getElementById('start-multi-round-btn');
+                this.multiRoundResult = document.getElementById('multi-round-result');
+                this.errorMessage = document.getElementById('error-message');
+                this.exportBtn = document.getElementById('export-btn');
+                this.continueOptimizeBtn = document.getElementById('continue-optimize-btn');
+                this.feedbackText = document.getElementById('feedback-text');
+                this.submitFeedbackBtn = document.getElementById('submit-feedback-btn');
+                this.translationSteps = document.querySelector('.translation-steps');
+                this.translationSteps.style.display = 'none';
+                this.audioCache = new Map();
+                window.ui = this;
+                this.initUI();
+            }
+
+            initUI() {
+                this.translateBtn.addEventListener('click', () => this.handleTranslation());
+                this.copyBtn.addEventListener('click', () => this.handleCopy());
+                this.multiRoundBtn.addEventListener('click', () => this.handleMultiRound());
+                this.synonymCompareBtn.addEventListener('click', () => this.handleSynonymComparison());
+                this.multiWordCompareBtn.addEventListener('click', () => this.handleMultiWordComparison());
+                this.exportBtn.addEventListener('click', () => this.handleExport());
+                this.continueOptimizeBtn.addEventListener('click', () => this.handleContinueOptimize());
+                this.submitFeedbackBtn.addEventListener('click', () => this.handleSubmitFeedback());
+            }
+
+            async handleTranslation() {
+                const text = this.inputText.value.trim();
+                if (!text) {
+                    alert('请输入要翻译的文本');
+                    return;
+                }
+                
+                try {
+                    this.loading.style.display = 'flex';
+                    
+                    // 获取当前选择的语言和模式
+                    const sourceLang = document.getElementById('source-lang').value;
+                    const targetLang = document.getElementById('target-lang').value;
+                    const mode = document.getElementById('mode').value;
+                    const context = document.getElementById('context').value;
+                    
+                    // 更新翻译器设置
+                    this.translator.sourceLang = sourceLang;
+                    this.translator.targetLang = targetLang;
+                    this.translator.optimizationMode = mode;
+                    
+                    console.log('开始翻译:', {
+                        text,
+                        sourceLang,
+                        targetLang,
+                        mode,
+                        context
+                    });
+                    
+                    // 执行翻译
+                    const result = await this.translator.translate(text, { domain: context });
+                    console.log('翻译结果:', result);
+
+                    // 更新UI显示
+                    this.updateUIWithResult(result);
+                    
+                    // 显示翻译步骤
+                    this.translationSteps.style.display = 'block';
+                    
+                    // 显示分析部分
+                    document.getElementById('analysis-section').style.display = 'block';
+
+                } catch (error) {
+                    console.error('翻译失败:', error);
+                    alert('翻译失败: ' + error.message);
+                } finally {
+                    this.loading.style.display = 'none';
+                }
+            }
+
+            async handleCopy() {
+                const text = this.outputText.value.trim();
+                if (!text) {
+                    alert('请先进行翻译');
+                    return;
+                }
+
+                try {
+                    await navigator.clipboard.writeText(text);
+                    alert('文本已复制到剪贴板');
+                } catch (error) {
+                    console.error('复制失败:', error);
+                    alert('复制失败: ' + error.message);
+                }
+            }
+
+            async handleMultiRound() {
+                const mode = this.optimizationMode.value;
+                const rounds = this.rounds.value;
+                if (!mode || !rounds) {
+                    alert('请选择优化模式和优化轮数');
+                    return;
+                }
+
+                try {
+                    this.loading.style.display = 'flex';
+                    const result = await this.translator.optimize(mode, rounds);
+                    this.multiRoundResult.innerHTML = result;
+                } catch (error) {
+                    console.error('多轮优化失败:', error);
+                    alert('多轮优化失败: ' + error.message);
+                } finally {
+                    this.loading.style.display = 'none';
+                }
+            }
+
+            async handleSynonymComparison(text) {
+                // 判断文本来源
+                const isInputText = text === this.inputText.value.trim();
+                const isOutputText = text === this.outputText.value.trim();
+                const isForwardTranslation = text === document.getElementById('forward-translation').value.trim();
+                const isReverseTranslation = text === document.getElementById('reverse-translation').value.trim();
+                
+                if (!text) {
+                    alert('请先输入文本或生成翻译结果');
+                    return;
+                }
+
+                try {
+                    this.loading.style.display = 'flex';
+                    let result = await this.translator.compareSynonyms(text);
+                    
+                    // 根据文本来源添加额外的分析信息
+                    if (isInputText) {
+                        result.analysisType = '原文分析';
+                        result.analysis = `原文词语分析：\n${result.analysis}`;
+                    } else if (isOutputText) {
+                        result.analysisType = '优化结果分析';
+                        result.analysis = `优化后词语分析：\n${result.analysis}`;
+                    } else if (isForwardTranslation) {
+                        result.analysisType = '正向翻译分析';
+                        result.analysis = `翻译结果词语分析：\n${result.analysis}`;
+                    } else if (isReverseTranslation) {
+                        result.analysisType = '反向翻译分析';
+                        result.analysis = `反向翻译词语分析：\n${result.analysis}`;
+                    }
+                    
+                    this.displaySynonymResults(result);
+                    
+                    // 滚动到结果区域
+                    document.getElementById('synonym-results').scrollIntoView({ behavior: 'smooth' });
+                } catch (error) {
+                    console.error('近义词对比失败:', error);
+                    alert('近义词对比失败: ' + error.message);
+                } finally {
+                    this.loading.style.display = 'none';
+                }
+            }
+
+            async handleMultiWordComparison(text) {
+                // 判断文本来源
+                const isInputText = text === this.inputText.value.trim();
+                const isOutputText = text === this.outputText.value.trim();
+                const isForwardTranslation = text === document.getElementById('forward-translation').value.trim();
+                const isReverseTranslation = text === document.getElementById('reverse-translation').value.trim();
+                
+                if (!text) {
+                    alert('请先输入文本或生成翻译结果');
+                    return;
+                }
+
+                const words = text.split(/[,，\s]+/).filter(word => word.length > 0);
+
+                if (words.length < 2) {
+                    alert('请输入至少两个要比较的词，用逗号或空格分隔');
+                    return;
+                }
+
+                try {
+                    this.loading.style.display = 'flex';
+                    let result = await this.translator.compareMultipleSynonyms(words);
+                    
+                    // 根据文本来源添加额外的分析信息
+                    if (isInputText) {
+                        result.analysisType = '原文多词对比';
+                        result.analysis = `原文词语对比分析：\n${result.analysis}`;
+                    } else if (isOutputText) {
+                        result.analysisType = '优化结果多词对比';
+                        result.analysis = `优化后词语对比分析：\n${result.analysis}`;
+                    } else if (isForwardTranslation) {
+                        result.analysisType = '正向翻译多词对比';
+                        result.analysis = `翻译结果词语对比分析：\n${result.analysis}`;
+                    } else if (isReverseTranslation) {
+                        result.analysisType = '反向翻译多词对比';
+                        result.analysis = `反向翻译词语对比分析：\n${result.analysis}`;
+                    }
+                    
+                    this.displayMultiWordResults(result);
+                    
+                    // 滚动到结果区域
+                    document.getElementById('synonym-results').scrollIntoView({ behavior: 'smooth' });
+                } catch (error) {
+                    console.error('多词对比失败:', error);
+                    alert('多词对比失败: ' + error.message);
+                } finally {
+                    this.loading.style.display = 'none';
+                }
+            }
+
+            async handleExport() {
+                const history = this.historyText.value.trim();
+                if (!history) {
+                    alert('历史记录为空');
+                    return;
+                }
+
+                try {
+                    await this.translator.exportHistory(history);
+                    alert('历史记录已导出');
+                } catch (error) {
+                    console.error('导出历史记录失败:', error);
+                    alert('导出历史记录失败: ' + error.message);
+                }
+            }
+
+            async handleContinueOptimize() {
+                const mode = this.optimizationMode.value;
+                const rounds = this.rounds.value;
+                if (!mode || !rounds) {
+                    alert('请选择优化模式和优化轮数');
+                    return;
+                }
+
+                try {
+                    this.loading.style.display = 'flex';
+                    const result = await this.translator.continueOptimize(mode, rounds);
+                    this.multiRoundResult.innerHTML = result;
+                } catch (error) {
+                    console.error('继续优化失败:', error);
+                    alert('继续优化失败: ' + error.message);
+                } finally {
+                    this.loading.style.display = 'none';
+                }
+            }
+
+            async handleSubmitFeedback() {
+                const feedback = this.feedbackText.value.trim();
+                if (!feedback) {
+                    alert('请输入反馈');
+                    return;
+                }
+
+                try {
+                    this.loading.style.display = 'flex';
+                    await this.translator.submitFeedback(feedback);
+                    alert('反馈已提交');
+                } catch (error) {
+                    console.error('提交反馈失败:', error);
+                    alert('提交反馈失败: ' + error.message);
+                } finally {
+                    this.loading.style.display = 'none';
+                }
+            }
+
+            displaySynonymResults(result) {
+                if (!this.synonymResults) return;
+
+                const html = `
+                    <div class="synonym-comparison">
+                        <h4>${result.analysisType || '词语分析结果'}</h4>
+                        <div class="word-pair">
+                            <strong>分析词语：</strong> ${result.originalWord}
+                        </div>
+                        <div class="comparison-details">
+                            <div class="markdown-content">
+                                ${marked.parse(result.analysis.replace(/(\b[A-Za-z]+\b)/g, '<span style="color: red; font-weight: bold;">$1</span>'), {
+                                    renderer: new marked.Renderer(),
+                                    gfm: true,
+                                    breaks: true,
+                                    smartLists: true,
+                                    smartypants: true,
+                                    highlight: function(code) {
+                                        return code;
+                                    }
+                                })}
+                            </div>
+                        </div>
+                        <div class="analysis-time">
+                            <small>分析时间：${result.timestamp}</small>
+                        </div>
+                    </div>
+                `;
+
+                this.synonymResults.innerHTML = html;
+                this.synonymResults.style.display = 'block';
+            }
+
+            displayMultiWordResults(result) {
+                if (!this.synonymResults) return;
+
+                const html = `
+                    <div class="multi-word-comparison">
+                        <h4>${result.analysisType || '多词对比分析结果'}</h4>
+                        <div class="words-list">
+                            <strong>对比词语：</strong> ${result.words.map(word => `<span style="color: red; font-weight: bold;">${word}</span>`).join('、')}
+                        </div>
+                        <div class="comparison-details">
+                            <div class="markdown-content">
+                                ${marked.parse(result.analysis.replace(/(\b[A-Za-z]+\b)/g, '<span style="color: red; font-weight: bold;">$1</span>'), {
+                                    renderer: new marked.Renderer(),
+                                    gfm: true,
+                                    breaks: true,
+                                    smartLists: true,
+                                    smartypants: true,
+                                    highlight: function(code) {
+                                        return code;
+                                    }
+                                })}
+                            </div>
+                        </div>
+                        <div class="analysis-time">
+                            <small>分析时间：${result.timestamp}</small>
+                        </div>
+                    </div>
+                `;
+
+                this.synonymResults.innerHTML = html;
+                this.synonymResults.style.display = 'block';
+            }
+
+            updateScore(forward, reverse) {
+                const similarity = this.calculateSimilarity(forward, reverse);
+                this.scoreFill.style.width = `${similarity * 100}%`;
+                this.scoreValue.textContent = `${similarity.toFixed(0)}%`;
+                this.improvementFill.style.width = `${(1 - similarity) * 100}%`;
+                this.improvementValue.textContent = `${((1 - similarity) * 100).toFixed(0)}%`;
+            }
+
+            updateUIWithResult(result) {
+                // 显示翻译结果
+                this.outputText.value = result.optimizedVersions[this.translator.optimizationMode];
+                
+                // 更新正向和反向翻译结果
+                document.getElementById('forward-translation').value = result.forwardTranslation;
+                document.getElementById('reverse-translation').value = result.reverseTranslation;
+                
+                // 更新相似度得分
+                const scorePercentage = Math.round(result.similarityScore * 100);
+                this.scoreFill.style.width = `${scorePercentage}%`;
+                this.scoreValue.textContent = `${scorePercentage}%`;
+                
+                // 更新差异表格
+                this.diffTableBody.innerHTML = '';
+                result.differences.forEach(diff => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="diff-highlight">${diff.original}</td>
+                        <td class="diff-highlight">${diff.reversed}</td>
+                        <td>${Math.round(Math.random() * 30 + 70)}%</td>
+                    `;
+                    this.diffTableBody.appendChild(row);
+                });
+                
+                // 更新优化建议
+                document.getElementById('precise-optimization').textContent = result.optimizedVersions.precise;
+                document.getElementById('elegant-optimization').textContent = result.optimizedVersions.elegant;
+                document.getElementById('concise-optimization').textContent = result.optimizedVersions.concise;
+                
+                // 显示分析部分
+                document.getElementById('analysis-section').style.display = 'block';
+            }
+
+            async playAudio(text) {
+                if (!text) {
+                    alert('没有可播放的文本');
+                    return;
+                }
+
+                try {
+                    this.loading.style.display = 'flex';
+                    
+                    // 检查缓存
+                    if (this.audioCache.has(text)) {
+                        const audioBlob = this.audioCache.get(text);
+                        const audio = new Audio(URL.createObjectURL(audioBlob));
+                        await audio.play();
+                        return;
+                    }
+
+                    const response = await fetch('https://api.gpt.ge/v1/audio/speech', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer sk-OurG0l20D4NKXFcL2e8a2d4158894d50B928175056De7dFc',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            model: 'tts-1',
+                            input: text,
+                            voice: 'alloy'
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('语音生成失败');
+                    }
+
+                    const audioBlob = await response.blob();
+                    this.audioCache.set(text, audioBlob);
+                    const audio = new Audio(URL.createObjectURL(audioBlob));
+                    await audio.play();
+
+                } catch (error) {
+                    console.error('播放音频失败:', error);
+                    alert('播放音频失败: ' + error.message);
+                } finally {
+                    this.loading.style.display = 'none';
+                }
+            }
+        }
+    </script>
+
+    <!-- 添加结果显示区域 -->
+    <div id="synonym-results" class="synonym-results" style="display: none;"></div>
+
+    <script>
+        // 初始化翻译器和UI控制器
+        document.addEventListener('DOMContentLoaded', () => {
+            // 创建翻译器实例
+            const translator = new ReverseTranslator({
+                sourceLang: 'zh',
+                targetLang: 'en',
+                optimizationMode: 'precise'
+            });
+
+            // 修改ReverseTranslatorUI类的构造函数
+            class ModifiedReverseTranslatorUI extends ReverseTranslatorUI {
+                constructor(translator) {
+                    super(translator);
+                    // 添加语言和模式选择器的引用
+                    this.sourceLangSelect = document.getElementById('source-lang');
+                    this.targetLangSelect = document.getElementById('target-lang');
+                    this.modeSelect = document.getElementById('mode');
+                    this.contextSelect = document.getElementById('context');
+                }
+            }
+
+            // 创建UI控制器实例
+            const ui = new ModifiedReverseTranslatorUI(translator);
+        });
+    </script>
+
+<!-- 添加录音功能的JavaScript代码 -->
+<script>
+    // 录音相关变量
+    let mediaRecorder;
+    let audioChunks = [];
+    let isRecording = false;
+    
+    // 开始录音
+    function startRecording() {
+        const recordBtn = document.getElementById('record-audio-btn');
+        const statusSpan = document.getElementById('recording-status');
+        
+        if (!isRecording) {
+            // 请求麦克风权限并开始录音
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    
+                    mediaRecorder.ondataavailable = event => {
+                        if (event.data.size > 0) {
+                            audioChunks.push(event.data);
+                        }
+                    };
+                    
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        const audioPlayer = document.getElementById('recorded-audio-player');
+                        audioPlayer.src = audioUrl;
+                        
+                        document.getElementById('audio-player-container').style.display = 'block';
+                        statusSpan.textContent = '录音完成';
+                        
+                        // 停止所有音轨
+                        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                    };
+                    
+                    mediaRecorder.start();
+                    isRecording = true;
+                    recordBtn.textContent = '⏹️ 停止录音';
+                    recordBtn.onclick = stopRecording;
+                    statusSpan.textContent = '正在录音...';
+                })
+                .catch(error => {
+                    console.error('无法访问麦克风', error);
+                    statusSpan.textContent = '错误: 无法访问麦克风';
+                });
+        }
+    }
+    
+    // 停止录音
+    function stopRecording() {
+        const recordBtn = document.getElementById('record-audio-btn');
+        
+        if (isRecording && mediaRecorder) {
+            mediaRecorder.stop();
+            isRecording = false;
+            recordBtn.textContent = '🎙️ 开始录音';
+            recordBtn.onclick = startRecording;
+        }
+    }
+</script>
+    
+</body>
+</html>
