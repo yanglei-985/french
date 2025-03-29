@@ -6,6 +6,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>反向翻译器 - 语言表达优化工具</title>
     <style>
+
+         /* 随机变色动画样式 */
+    @keyframes rainbow-text {
+        0% { color: #ff0000; } /* 红色 */
+        14% { color: #ff7f00; } /* 橙色 */
+        28% { color: #ffff00; } /* 黄色 */
+        42% { color: #00ff00; } /* 绿色 */
+        56% { color: #0000ff; } /* 蓝色 */
+        70% { color: #4b0082; } /* 靛蓝色 */
+        84% { color: #9400d3; } /* 紫色 */
+        100% { color: #ff0000; } /* 回到红色 */
+    }
+
+    #rainbow-link {
+        text-decoration: none;
+        animation: rainbow-text 4s linear infinite;
+    }
+    
+    /* 鼠标悬停时保持可见的链接下划线 */
+    #rainbow-link:hover {
+        text-decoration: underline;
+    }
         :root {
             --primary-color: #91AD70;
             --secondary-color: #6b8cae;
@@ -564,7 +586,7 @@
     <header>
         <div class="logo">
             <span class="logo-icon">🧠 </span>
-            <span>反向翻译器<a href="https://yanglei-985.github.io/worktable/">Normande</a></span>
+            <span>反向翻译器<a href="https://yanglei-985.github.io/worktable/" id="rainbow-link">Normande</a></span>
         </div>
         <nav>
             <ul>
